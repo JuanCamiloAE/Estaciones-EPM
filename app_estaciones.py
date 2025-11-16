@@ -168,3 +168,5 @@ if "Latitud" in df_filtrado.columns and "Longitud" in df_filtrado.columns:
 else:
     st.warning("⚠️ No se encontraron registros con los filtros seleccionados.")
 
+
+st.caption('Covertura y capacidad de estaciones de EPM - Proyecto equipo 2')
