@@ -77,7 +77,7 @@ if tipos_carga:
 with st.container(border=True):
     st.markdown("### Resultados Filtrados")
     st.dataframe(df_filtrado, use_container_width=True, height=600)
-    st.write(f"🔎 Registros encontrados: **{len(df_filtrado)}**")
+    st.write(f"🔎 Registros encontrados: **{len(df_filtrado)}**")  # Taxto inferior de la tablar 
 
 
 # CONTENEDOR: TÍTULO DE GRÁFICAS
@@ -108,79 +108,63 @@ if not df_filtrado.empty:
         )
         st.plotly_chart(fig_ciudad, use_container_width=True)
 
-    # --- Gráfico 2: Estaciones por Tipo de Carga ---
-    with st.container(border=True):
-        st.subheader('Proporción por tipo de carga')
-        fig_carga = px.pie(
-            df_filtrado,
-            names="Tipo de carga",
-            hole=0.4
+
+# --- Mapa Interactivo ---
+# # (recomendado al inicio del script, fuera de este bloque)
+# st.set_page_config(layout="wide")
+
+if "Latitud" in df_filtrado.columns and "Longitud" in df_filtrado.columns:
+    df_mapa = df_filtrado.dropna(subset=["Latitud", "Longitud"])
+
+    if not df_mapa.empty:
+        # Centro del mapa (promedio de coordenadas)
+        centro_lat = df_mapa["Latitud"].mean()
+        centro_lon = df_mapa["Longitud"].mean()
+
+        # --- Cálculo de span para "maximizar" la ubicación ---
+        lat_min, lat_max = df_mapa["Latitud"].min(), df_mapa["Latitud"].max()
+        lon_min, lon_max = df_mapa["Longitud"].min(), df_mapa["Longitud"].max()
+        max_span = max(lat_max - lat_min, lon_max - lon_min)
+
+        # Heurística de zoom según qué tan dispersos estén los puntos
+        if max_span < 0.01:       # Muy cerca (unas pocas cuadras)
+            zoom = 15
+        elif max_span < 0.05:     # Barrio / comuna
+            zoom = 13
+        elif max_span < 0.1:      # Parte de ciudad
+            zoom = 12
+        elif max_span < 0.5:      # Ciudad completa
+            zoom = 10
+        elif max_span < 1:        # Área metropolitana
+            zoom = 9
+        else:                     # Varias ciudades / región
+            zoom = 7
+
+        fig_mapa = px.scatter_mapbox(
+            df_mapa,
+            lat="Latitud",
+            lon="Longitud",
+            hover_name="Estacion",
+            hover_data={"Ciudad": True, "Tipo de estacion": True, "Direccion": True},
+            color_discrete_sequence=["#1DB954"],
+            zoom=13,                 # ← MÁS ZOOM (ajústalo a 14, 15 o 16)
+            size=[11] * len(df_mapa),# ← BOLITA MÁS GRANDE
+            size_max=25,             # ← TAMAÑO MÁXIMO
+            height=600
+        )   
+
+        fig_mapa.update_layout(
+            mapbox_style="open-street-map",
+            mapbox_center={"lat": centro_lat, "lon": centro_lon},
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
         )
-        st.plotly_chart(fig_carga, use_container_width=True)
 
+        with st.container(border=True):
+            st.subheader('Mapa de Estaciones Filtradas')
+            st.plotly_chart(fig_mapa, use_container_width=True)
 
-    #Codigo de barras 
-    # --- Gráfico actualizado: Barras horizontales por Tipo de Carga ---
-    with st.container(border=True):
-        st.subheader('Distribución por Tipo de Carga')
-
-        df_carga = (
-        df_filtrado
-        .groupby("Tipo de carga")
-        .size()
-        .reset_index(name="Cantidad")
-        .sort_values("Cantidad", ascending=True)  # ordena para barras más limpias
-        )
-
-        fig_carga_bar = px.bar(
-        df_carga,
-        x="Cantidad",
-        y="Tipo de carga",
-        orientation="h",
-        text="Cantidad",               # muestra valores encima
-        )
-
-        fig_carga_bar.update_traces(textposition="outside")
-        fig_carga_bar.update_layout(
-        xaxis_title="Cantidad de Estaciones",
-        yaxis_title="Tipo de Carga",
-        margin=dict(l=10, r=10, t=10, b=10),
-        )
-
-        st.plotly_chart(fig_carga_bar, use_container_width=True)
-
-
-    # --- Mapa Interactivo ---
-    if "Latitud" in df_filtrado.columns and "Longitud" in df_filtrado.columns:
-        df_mapa = df_filtrado.dropna(subset=["Latitud", "Longitud"])
-
-        if not df_mapa.empty:
-            centro_lat = df_mapa["Latitud"].mean()
-            centro_lon = df_mapa["Longitud"].mean()
-
-            fig_mapa = px.scatter_mapbox(
-                df_mapa,
-                lat="Latitud",
-                lon="Longitud",
-                hover_name="Estacion",
-                hover_data={"Ciudad": True, "Tipo de estacion": True, "Direccion": True},
-                color_discrete_sequence=["#1DB954"],
-                zoom=10,
-                height=600
-            )
-
-            fig_mapa.update_layout(
-                mapbox_style="open-street-map",
-                mapbox_center={"lat": centro_lat, "lon": centro_lon},
-                margin={"r":0, "t":0, "l":0, "b":0},
-            )
-
-            with st.container(border=True):
-                st.subheader('Mapa de Estaciones Filtradas')
-                st.plotly_chart(fig_mapa, use_container_width=True)
-        else:
-            st.warning("⚠️ No hay coordenadas válidas para mostrar en el mapa.")
-
+    else:
+        st.warning("⚠️ No hay coordenadas válidas para mostrar en el mapa.")
 else:
     st.warning("⚠️ No se encontraron registros con los filtros seleccionados.")
 
