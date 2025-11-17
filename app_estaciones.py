@@ -80,23 +80,20 @@ with st.container(border=True):
     st.write(f"🔎 Registros encontrados: **{len(df_filtrado)}**")  # Taxto inferior de la tablar 
 
 
-# CONTENEDOR: TÍTULO DE GRÁFICAS
+# GRÁFICAS INTERACTIVAS
+#st.markdown("## Análisis Visual de Estaciones")
 with st.container(border=True):
     st.markdown("""
-        <div style='background-color: white;
-                 padding: 15px;
-                 border-radius: 10px;
-                 border: 2px solid #1DB954;
-                 text-align: center;'>
-            <h1 style='color: green;'> Análisis Visual de Estaciones </h1>
-        </div>
-    """, unsafe_allow_html=True)
+    <div style='background-color: white;
+             padding: 15px;
+             border-radius: 10px;
+             border: 2px solid #1DB954;
+             text-align: center;'>
+        <h1 style='color: green;'> Análisis Visual de Estaciones </h1>
+    </div>
+""", unsafe_allow_html=True)
 
-
-
-# GRÁFICAS INTERACTIVAS
 if not df_filtrado.empty:
-
     # --- Gráfico 1: Estaciones por Ciudad ---
     with st.container(border=True):
         st.subheader('Distribución de Estaciones por Ciudad')
@@ -104,14 +101,27 @@ if not df_filtrado.empty:
             df_filtrado.groupby("Ciudad").size().reset_index(name="Cantidad"),
             x="Ciudad",
             y="Cantidad",
-            color="Ciudad"
-        )
+            color="Ciudad",
+            #title="Distribución de Estaciones por Ciudad"    -- TITULO CHIQUITO DEPENDE LO QUE SE DEFINA CON EL EQUIPO
+    )
+    with st.container(border=True):
         st.plotly_chart(fig_ciudad, use_container_width=True)
 
+    # --- Gráfico 2: Estaciones por Tipo de Carga ---
+with st.container(border=True):
+    st.subheader('Proporción por tipo de carga')
+    fig_carga = px.pie(
+        df_filtrado,
+        names="Tipo de carga",
+        #title="Proporción por Tipo de Carga",           -- TITULO CHIQUITO DEPENDE LO QUE SE DEFINA CON EL EQUIPO
+        hole=0.4
+    )
+with st.container(border=True):
+    st.plotly_chart(fig_carga, use_container_width=True)
 
-# --- Mapa Interactivo ---
-# # (recomendado al inicio del script, fuera de este bloque)
-# st.set_page_config(layout="wide")
+# # --- Mapa Interactivo ---
+# # # (recomendado al inicio del script, fuera de este bloque)
+st.set_page_config(layout="wide")
 
 if "Latitud" in df_filtrado.columns and "Longitud" in df_filtrado.columns:
     df_mapa = df_filtrado.dropna(subset=["Latitud", "Longitud"])
@@ -169,4 +179,4 @@ else:
     st.warning("⚠️ No se encontraron registros con los filtros seleccionados.")
 
 
-st.caption('Covertura y capacidad de estaciones de EPM - Proyecto equipo 2')
+#st.caption('Covertura y capacidad de estaciones de EPM - Proyecto equipo 2')
